@@ -1053,7 +1053,9 @@ body {
 }
 
 .tv-android-launcher-row {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
   margin-top: 4px;
 }
 
@@ -1062,16 +1064,16 @@ body {
   background: linear-gradient(135deg, #3DDC84, #00C853);
   color: #000;
   border: none;
-  padding: 10px 14px;
+  padding: 10px 10px;
   border-radius: var(--radius-sm);
   font-family: var(--font-body);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 800;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
+  gap: 6px;
   box-shadow: 0 4px 16px rgba(61, 220, 132, 0.3);
   transition: all 0.2s ease;
 }
@@ -1083,6 +1085,32 @@ body {
   background: linear-gradient(135deg, #40EC8E, #00E676);
 }
 
+.btn-android-download {
+  width: 100%;
+  background: linear-gradient(135deg, #00E5FF, #00B0FF);
+  color: #000;
+  border: none;
+  padding: 10px 10px;
+  border-radius: var(--radius-sm);
+  font-family: var(--font-body);
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  box-shadow: 0 4px 16px rgba(0, 229, 255, 0.3);
+  transition: all 0.2s ease;
+}
+
+.btn-android-download:hover,
+.btn-android-download:active {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0, 229, 255, 0.5);
+  background: linear-gradient(135deg, #18FFFF, #40C4FF);
+}
+
 .android-icon {
-  font-size: 16px;
+  font-size: 15px;
 }

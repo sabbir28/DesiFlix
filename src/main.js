@@ -7,49 +7,35 @@ document.addEventListener('DOMContentLoaded', () => {
     initSmartTVStreamer();
 });
 
-// Sample Movie & Show Data for DesiFlix
-const desiflixShows = [
-    {
-        title: "Mirzapur Uncut",
-        badge: "🔥 TOP 1",
-        meta: "4K HDR • Action / Crime",
-        bg: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=400&auto=format&fit=crop')"
-    },
-    {
-        title: "The Family Agent",
-        badge: "⭐ 9.2",
-        meta: "HD • Thriller",
-        bg: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1517604931442-7e0c8ed2963c?w=400&auto=format&fit=crop')"
-    },
-    {
-        title: "Sacred Games 3",
-        badge: "NEW",
-        meta: "Dolby 5.1 • Drama",
-        bg: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1489599849927-2ee91cede3ba?w=400&auto=format&fit=crop')"
-    },
-    {
-        title: "Delhi Crime Files",
-        badge: "TRENDING",
-        meta: "HD • True Crime",
-        bg: "linear-gradient(180deg, rgba(0,0,0,0.2), rgba(0,0,0,0.85)), url('https://images.unsplash.com/photo-1478720568477-152d9b164e26?w=400&auto=format&fit=crop')"
-    }
-];
+
 
 function initCatalog() {
     const container = document.getElementById('catalog-list');
     if (!container) return;
 
-    container.innerHTML = desiflixShows.map(show => `
-    <div class="movie-card">
-      <div class="movie-poster" style="background-image: ${show.bg};">
-        <span class="movie-badge">${show.badge}</span>
+    container.innerHTML = quickTVChannels.map(ch => `
+    <div class="movie-card tv-quick-card" data-id="${ch.id}" style="cursor: pointer;">
+      <div class="movie-poster" style="background: linear-gradient(135deg, rgba(124, 77, 255, 0.4), rgba(255, 23, 68, 0.4)), #0F0A26; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 6px;">
+        <span style="font-size: 32px;">📺</span>
+        <span class="movie-badge">${ch.badge}</span>
       </div>
       <div class="movie-info">
-        <div class="movie-title">${show.title}</div>
-        <div class="movie-meta">${show.meta}</div>
+        <div class="movie-title">${ch.title}</div>
+        <div class="movie-meta">${ch.meta}</div>
       </div>
     </div>
   `).join('');
+
+    container.querySelectorAll('.tv-quick-card').forEach(card => {
+        card.addEventListener('click', () => {
+            const chId = parseInt(card.getAttribute('data-id'), 10);
+            if (chId && typeof playChannel === 'function') {
+                playChannel(chId);
+                const streamerSection = document.getElementById('tv-streamer-section');
+                streamerSection?.scrollIntoView({ behavior: 'smooth' });
+            }
+        });
+    });
 }
 
 function initConsoleLogs() {
@@ -244,6 +230,9 @@ function initSmartTVStreamer() {
     const androidNativeBtn = document.getElementById('btn-tv-android-native');
     androidNativeBtn?.addEventListener('click', launchAndroidNativePlayer);
 
+    const androidDownloadBtn = document.getElementById('btn-tv-android-download');
+    androidDownloadBtn?.addEventListener('click', downloadAndroidNativeStream);
+
     channelInput?.addEventListener('keyup', (e) => {
         if (e.key === 'Enter') jumpToChannel();
     });
@@ -273,6 +262,39 @@ function launchAndroidNativePlayer() {
     }
 }
 
+async function downloadAndroidNativeStream() {
+    const streamUrl = `${TV_CONFIG.baseUrl}${TV_CONFIG.currentId}.mp4`;
+    const filename = `DesiFlix_Channel_A${TV_CONFIG.currentId}.mp4`;
+
+    appendLog('info', `[NativeDownload] Initiating native download for Channel A${TV_CONFIG.currentId}`);
+    if ('vibrate' in navigator) navigator.vibrate([100, 50, 100]);
+
+    try {
+        const NativeStreamService = window.Capacitor?.Plugins?.NativeStreamService;
+        if (NativeStreamService && typeof NativeStreamService.downloadStreamNative === 'function') {
+            const res = await NativeStreamService.downloadStreamNative({
+                url: streamUrl,
+                filename: filename
+            });
+
+            appendLog('success', `[NativeDownload] Started Android DownloadManager: ${filename}`);
+            showCustomToast(`🚀 Android Download Started: ${filename}`);
+            return;
+        }
+    } catch (e) {
+        console.warn("Native download fallback to browser download", e);
+    }
+
+    const link = document.createElement('a');
+    link.href = streamUrl;
+    link.download = filename;
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    showCustomToast(`Downloading Channel A${TV_CONFIG.currentId}...`);
+}
+
 function playChannel(id) {
     if (id < 1) id = 1;
     TV_CONFIG.currentId = id;
@@ -288,24 +310,23 @@ function playChannel(id) {
     if (badgeText) badgeText.textContent = `Channel A${id} Active`;
     if (channelInput) channelInput.value = id;
 
-    updateStatusText(`Loading A${id}...`);
+    saveWorkingChannel(id, streamUrl);
 
     if (video) {
+        showLoader(true, `Loading Stream Channel A${id}...`);
+        updateStatusText("Connecting...");
+
         video.src = streamUrl;
         video.load();
-        const playPromise = video.play();
-        if (playPromise !== undefined) {
-            playPromise.then(() => {
-                // Playback started! Auto save active channel
-                saveWorkingChannel(id, streamUrl);
-                appendLog('success', `[PremiumTV] Playing Channel A${id} successfully.`);
-            }).catch(() => {
-                appendLog('warning', `[PremiumTV] Stream A${id} autoplay blocked or offline.`);
-                if (TV_CONFIG.autoNext && !isScanning) {
-                    setTimeout(() => nextSmart(), 1200);
-                }
-            });
-        }
+
+        video.play().then(() => {
+            showLoader(false);
+            updateStatusText("Streaming Live 4K");
+            appendLog('success', `[PremiumTV] Playing Channel A${id}`);
+        }).catch(err => {
+            showLoader(false);
+            appendLog('warning', `[PremiumTV] Channel A${id} playback deferred: ${err.message}`);
+        });
     }
 }
 
@@ -327,25 +348,27 @@ function prevChannel() {
 
 async function isLikelyWorking(id) {
     const url = `${TV_CONFIG.baseUrl}${id}.mp4`;
+
     try {
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 2500);
-
-        const response = await fetch(url, {
-            method: 'HEAD',
-            mode: 'cors'
-        });
-        clearTimeout(timeoutId);
-
-        if (response.ok || response.status === 206) {
-            return true;
+        const NativeStreamService = window.Capacitor?.Plugins?.NativeStreamService;
+        if (NativeStreamService && typeof NativeStreamService.probeStream === 'function') {
+            const res = await NativeStreamService.probeStream({ url });
+            if (res && typeof res.working === 'boolean') {
+                return res.working;
+            }
         }
     } catch (e) {
-        // Fallback optimistic probe
+        console.warn("Native Java probe fallback to JS", e);
     }
+
+    try {
+        const response = await fetch(url, { method: 'HEAD', cache: 'no-cache' });
+        if (response.ok) return true;
+    } catch (e) { }
 
     return new Promise((resolve) => {
         const testVideo = document.createElement('video');
+        testVideo.preload = 'metadata';
         let resolved = false;
 
         const cleanup = () => {
@@ -431,8 +454,41 @@ async function manualScanAhead() {
     const scanCount = 15;
     appendLog('info', `[PremiumTV] Scanning channels A${startId} to A${startId + scanCount}...`);
     showCustomToast(`Scanning ahead 15 channels...`);
+    showLoader(true, `Starting fast native stream scan...`);
 
     let foundCount = 0;
+
+    try {
+        const NativeStreamService = window.Capacitor?.Plugins?.NativeStreamService;
+        if (NativeStreamService && typeof NativeStreamService.scanChannelsNative === 'function') {
+            const res = await NativeStreamService.scanChannelsNative({
+                baseUrl: TV_CONFIG.baseUrl,
+                startId: startId,
+                count: scanCount
+            });
+
+            if (res && res.channels && Array.isArray(res.channels)) {
+                res.channels.forEach(ch => {
+                    foundCount++;
+                    saveWorkingChannel(ch.id, ch.url);
+                    appendLog('success', `[Native Java Scan] Found & Saved: Channel A${ch.id}`);
+                });
+
+                showLoader(false);
+                isScanning = false;
+                if (scanBtn) scanBtn.disabled = false;
+
+                updateStatusText(`Native Scan Complete! Found ${foundCount} working streams.`);
+                showCustomToast(`⚡ Native Java Scan finished! Found ${foundCount} active channels.`);
+                if ('vibrate' in navigator) navigator.vibrate([100, 50, 100, 50, 100]);
+                renderSavedChannels();
+                return;
+            }
+        }
+    } catch (e) {
+        console.warn("Native scanner fallback to JS", e);
+    }
+
     for (let i = 0; i < scanCount; i++) {
         const testId = startId + i;
         showLoader(true, `Scanning Channel A${testId} (${i + 1}/${scanCount})...`);
@@ -577,42 +633,5 @@ function showLoader(show, text = "") {
 }
 
 
-// Quick launcher TV channels for catalog bar
-const quickTVChannels = [
-    { id: 1, title: "Channel A1", badge: "LIVE 4K", meta: "HD Stream • Auto-Skip" },
-    { id: 2, title: "Channel A2", badge: "LIVE HD", meta: "Smart Stream v2.2" },
-    { id: 3, title: "Channel A3", badge: "POPULAR", meta: "Auto-Probed 200 OK" },
-    { id: 4, title: "Channel A4", badge: "LIVE", meta: "DesiFlix Stream Engine" },
-    { id: 5, title: "Channel A5", badge: "SMART", meta: "Live Feed • High Speed" },
-    { id: 6, title: "Channel A6", badge: "STREAM", meta: "Direct MP4 Feed" }
-];
 
-function initCatalog() {
-    const container = document.getElementById('catalog-list');
-    if (!container) return;
-
-    container.innerHTML = quickTVChannels.map(ch => `
-    <div class="movie-card tv-quick-card" data-id="${ch.id}" style="cursor: pointer;">
-      <div class="movie-poster" style="background: linear-gradient(135deg, rgba(124, 77, 255, 0.4), rgba(255, 23, 68, 0.4)), #0F0A26; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center; gap: 6px;">
-        <span style="font-size: 32px;">📺</span>
-        <span class="movie-badge">${ch.badge}</span>
-      </div>
-      <div class="movie-info">
-        <div class="movie-title">${ch.title}</div>
-        <div class="movie-meta">${ch.meta}</div>
-      </div>
-    </div>
-  `).join('');
-
-    container.querySelectorAll('.tv-quick-card').forEach(card => {
-        card.addEventListener('click', () => {
-            const chId = parseInt(card.getAttribute('data-id'), 10);
-            if (chId && typeof playChannel === 'function') {
-                playChannel(chId);
-                const streamerSection = document.getElementById('tv-streamer-section');
-                streamerSection?.scrollIntoView({ behavior: 'smooth' });
-            }
-        });
-    });
-}
 
