@@ -1,0 +1,25 @@
+{
+  "name": "desiflix-android-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "DesiFlix Android APK Hello World Application powered by Node.js, Vite & Capacitor",
+  "type": "module",
+  "scripts": {
+    "dev": "vite --host 0.0.0.0",
+    "build": "vite build",
+    "preview": "vite preview",
+    "release": "node scripts/auto-release.js",
+    "cap:add": "npx cap add android",
+    "cap:copy": "npx cap copy android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^6.1.2",
+    "@capacitor/cli": "^6.1.2",
+    "@capacitor/core": "^6.1.2"
+  },
+  "devDependencies": {
+    "vite": "^5.4.2"
+  }
+}

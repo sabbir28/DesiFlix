@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>DesiFlix - Node.js Android Application</title>
+  
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <div id="app" class="mobile-frame">
+    <!-- Top Status Bar & App Header -->
+    <header class="app-header">
+      <div class="brand-container">
+        <div class="brand-logo">
+          <span class="logo-icon">🎬</span>
+          <div class="logo-text">
+            <span class="brand-title">DESIFLIX</span>
+            <span class="brand-badge">ANDROID APK</span>
+          </div>
+        </div>
+        <div class="status-pill" id="engine-status">
+          <span class="status-dot pulsing"></span>
+          <span class="status-text">Node.js Active</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Main Content Container -->
+    <main class="app-body">
+      <!-- Hero Hello World Banner -->
+      <section class="hero-banner">
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="hero-chip">🚀 Built with Node.js & Capacitor</div>
+          <h1 class="hero-title">Hello World!</h1>
+          <p class="hero-subtitle">
+            Your Node.js powered Android application is live and ready to build into an APK!
+          </p>
+          <div class="hero-actions">
+            <button class="btn btn-primary" id="btn-inspect-node">
+              <span>⚡ Inspect Engine</span>
+            </button>
+            <button class="btn btn-secondary" id="btn-simulate-apk">
+              <span>📦 APK Status</span>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- Architecture & Tech Explanation Card -->
+      <section class="section-container">
+        <div class="section-header">
+          <h2>🛠️ How Node.js Builds This APK</h2>
+          <span class="section-tag">Architecture</span>
+        </div>
+
+        <div class="tech-grid">
+          <div class="tech-card glass-card">
+            <div class="tech-icon">🟩</div>
+            <div class="tech-info">
+              <h3>Node.js Toolchain</h3>
+              <p>Powers Vite bundling, NPM package dependency resolution, and build scripts.</p>
+              <div class="tech-tag" id="node-ver-tag">Node v24.14.1</div>
+            </div>
+          </div>
+
+          <div class="tech-card glass-card">
+            <div class="tech-icon">⚡</div>
+            <div class="tech-info">
+              <h3>Capacitor Native Engine</h3>
+              <p>Bridges JavaScript calls directly into native Android Java/Kotlin APIs.</p>
+              <div class="tech-tag">Capacitor 6.x</div>
+            </div>
+          </div>
+
+          <div class="tech-card glass-card">
+            <div class="tech-icon">📱</div>
+            <div class="tech-info">
+              <h3>Android WebView Runtime</h3>
+              <p>Executes optimized JS engine inside APK container with zero extra web views.</p>
+              <div class="tech-tag">Target SDK 34</div>
+            </div>
+          </div>
+
+          <div class="tech-card glass-card">
+            <div class="tech-icon">☕</div>
+            <div class="tech-info">
+              <h3>Gradle APK Compilation</h3>
+              <p>Generates standalone release & debug <code>app-debug.apk</code> binaries.</p>
+              <div class="tech-tag">Gradle 8.x</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Interactive Native Features Test -->
+      <section class="section-container">
+        <div class="section-header">
+          <h2>🧪 Test Native Android Features</h2>
+          <span class="section-tag">Interactive</span>
+        </div>
+
+        <div class="glass-card feature-tester">
+          <div class="test-controls">
+            <button class="test-btn" id="btn-haptic">
+              <span class="test-icon">📳</span>
+              <span>Trigger Haptic Vibration</span>
+            </button>
+            <button class="test-btn" id="btn-toast">
+              <span class="test-icon">💬</span>
+              <span>Show Android Toast</span>
+            </button>
+            <button class="test-btn" id="btn-device">
+              <span class="test-icon">📲</span>
+              <span>Get Device Info</span>
+            </button>
+            <button class="test-btn" id="btn-theme">
+              <span class="test-icon">🌓</span>
+              <span>Toggle Ambient Mode</span>
+            </button>
+          </div>
+          <div class="console-box" id="console-output">
+            <div class="console-line info">> System ready. Press any button to run native JavaScript bridges.</div>
+          </div>
+        </div>
+      </section>
+
+      <!-- DesiFlix Streaming Showcase Catalog -->
+      <section class="section-container">
+        <div class="section-header">
+          <h2>🔥 DesiFlix Trending Shows</h2>
+          <span class="section-tag">Sample UI</span>
+        </div>
+
+        <div class="catalog-scroll" id="catalog-list">
+          <!-- Dynamically populated via JS -->
+        </div>
+      </section>
+
+      <!-- APK Compilation Instructions Modal / Card -->
+      <section class="section-container" id="apk-instructions-section">
+        <div class="glass-card apk-card">
+          <div class="apk-header">
+            <span class="apk-icon">🤖</span>
+            <div>
+              <h3>Generate Your Android .APK File</h3>
+              <p>Follow these 3 simple Node.js terminal commands in project folder:</p>
+            </div>
+          </div>
+          
+          <div class="code-block">
+            <div class="code-header">
+              <span>POWERSHELL / CMD</span>
+              <button class="copy-btn" id="btn-copy-cmd">Copy Commands</button>
+            </div>
+            <pre><code><span class="cmd-comment"># 1. Build optimized web distribution bundle</span>
+npm run build
+
+<span class="cmd-comment"># 2. Add Android native platform & sync assets</span>
+npx cap add android
+npx cap sync android
+
+<span class="cmd-comment"># 3. Build APK binary file directly</span>
+npx cap open android</code></pre>
+          </div>
+          <div class="apk-footer-note">
+            💡 Or run <code>cd android && ./gradlew assembleDebug</code> to generate <code>app/build/outputs/apk/debug/app-debug.apk</code> without Android Studio GUI!
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Bottom Navigation Bar -->
+    <nav class="app-nav">
+      <a href="#" class="nav-item active">
+        <span class="nav-icon">🏠</span>
+        <span class="nav-label">Home</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-movies">
+        <span class="nav-icon">🎬</span>
+        <span class="nav-label">Movies</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-apk">
+        <span class="nav-icon">🤖</span>
+        <span class="nav-label">Build APK</span>
+      </a>
+      <a href="#" class="nav-item" id="nav-settings">
+        <span class="nav-icon">⚙️</span>
+        <span class="nav-label">Settings</span>
+      </a>
+    </nav>
+  </div>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

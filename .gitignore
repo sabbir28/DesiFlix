@@ -1,0 +1,52 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# Node dependencies
+node_modules/
+package-lock.json
+
+# Build outputs
+dist/
+dist-ssr
+*.local
+output_apk/
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+# Capacitor & Android build artifacts
+android/app/build/
+android/.gradle/
+android/build/
+android/captures/
+android/.idea/
+android/*.iml
+android/app/*.iml
+android/local.properties
+android/.navigation/
+
+# Android Signing Keys & Keystores (SECURITY CRITICAL)
+*.keystore
+*.jks
+*.p12
+*.pem
+release.keystore
+debug.keystore
+
+# Android APK / AAB binaries
+*.apk
+*.aab
