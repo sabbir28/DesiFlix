@@ -71,15 +71,17 @@ jobs:
       - name: 🖊️ Sign Release APK (If Keystore Provided)
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          BUILD_TOOLS_VERSION: '34.0.0'
-        if: ${{ env.KEYSTORE_BASE64 != '' }}
-        uses: rnicoll/action-sign-app@v1
-        with:
-          releaseDirectory: android/app/build/outputs/apk/release
-          signingKeyBase64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          alias: ${{ secrets.ANDROID_KEY_ALIAS }}
-          keyStorePassword: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          keyPassword: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: |
+          if [ -n "$KEYSTORE_BASE64" ] && [ -f "android/app/release.keystore" ]; then
+            echo "Signing APK with provided keystore..."
+            BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | tail -n 1)
+            $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore --ks-pass pass:"$KEYSTORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass pass:"$KEY_PASSWORD" android/app/build/outputs/apk/release/*.apk || true
+          else
+            echo "No keystore provided. Skipping APK signing."
+          fi
 
       - name: 🏷️ Rename APK Artifact
         run: |
