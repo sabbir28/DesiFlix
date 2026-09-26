@@ -43,7 +43,7 @@ jobs:
           echo "Determined release version: v${VERSION}"
 
       - name: ☕ Setup Java JDK 17
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v6
         with:
           distribution: 'zulu'
           java-version: '17'
