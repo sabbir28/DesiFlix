@@ -27,7 +27,7 @@ run('git add .');
 
 // 2. Commit changes if any exist
 try {
-    run(`git commit -m "release: ${tagVersion} - DesiFlix Android APK release"`);
+    run(`git commit -m "release: ${tagVersion} - DesiFlix Android APK release (Signed)"`);
 } catch (e) {
     console.log('No new changes to commit, proceeding to tag...');
 }
@@ -49,5 +49,6 @@ run('git push -u origin main');
 run(`git push origin ${tagVersion}`);
 
 console.log(`\n\x1b[32m🎉 RELEASE COMPLETE!\x1b[0m`);
-console.log(`\x1b[33mGitHub Actions is now automatically building & publishing your Android APK release at:\x1b[0m`);
+console.log(`\x1b[33mGitHub Actions is now automatically building & publishing your SIGNED Android APK release at:\x1b[0m`);
 console.log(`👉 https://github.com/sabbir28/DesiFlix/releases/tag/${tagVersion}\n`);
+

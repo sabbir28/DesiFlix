@@ -51,48 +51,112 @@ jobs:
           npx cap add android || true
           npx cap sync android
 
-      - name: 🔑 Decode Android Keystore (If Secret Present)
+      - name: 🔑 Setup Release Keystore (Custom Secret or Auto-Generated Default)
         env:
           KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
         run: |
+          mkdir -p android/app
           if [ -n "$KEYSTORE_BASE64" ]; then
+            echo "Using custom keystore from repository secrets..."
             echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
           else
-            echo "No keystore secret provided. Proceeding with standard build."
+            echo "No custom keystore secret provided. Generating default release keystore..."
+            keytool -genkeypair -v -storetype PKCS12 -keystore android/app/release.keystore \
+              -alias desiflix-key -keyalg RSA -keysize 2048 -validity 10000 \
+              -storepass android -keypass android \
+              -dname "CN=DesiFlix, OU=Mobile, O=DesiFlix, L=City, S=State, C=US"
           fi
 
-      - name: 🏗️ Build Android APK with Gradle
+      - name: 🖊️ Inject Gradle Release Signing Configuration
+        run: |
+          cat << 'EOF' > android/app/signing.gradle
+          android {
+              signingConfigs {
+                  release {
+                      if (project.hasProperty('RELEASE_STORE_FILE') && file(RELEASE_STORE_FILE).exists()) {
+                          storeFile file(RELEASE_STORE_FILE)
+                          storePassword RELEASE_STORE_PASSWORD
+                          keyAlias RELEASE_KEY_ALIAS
+                          keyPassword RELEASE_KEY_PASSWORD
+                      } else if (file("release.keystore").exists()) {
+                          storeFile file("release.keystore")
+                          storePassword "android"
+                          keyAlias "desiflix-key"
+                          keyPassword "android"
+                      } else {
+                          storeFile file("${System.getProperty('user.home')}/.android/debug.keystore")
+                          storePassword "android"
+                          keyAlias "androiddebugkey"
+                          keyPassword "android"
+                      }
+                      v1SigningEnabled true
+                      v2SigningEnabled true
+                  }
+              }
+              buildTypes {
+                  release {
+                      signingConfig signingConfigs.release
+                      minifyEnabled false
+                      shrinkResources false
+                  }
+              }
+          }
+          EOF
+          if ! grep -q "apply from: 'signing.gradle'" android/app/build.gradle; then
+            echo "apply from: 'signing.gradle'" >> android/app/build.gradle
+          fi
+
+      - name: 🏗️ Build Android Signed APK with Gradle
+        env:
+          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          RELEASE_STORE_FILE: "release.keystore"
+          RELEASE_STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}
+          RELEASE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS || 'desiflix-key' }}
+          RELEASE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}
         run: |
           cd android
           chmod +x gradlew
           ./gradlew assembleRelease --no-daemon
 
-      - name: 🖊️ Sign Release APK (If Keystore Provided)
-        env:
-          KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
-          KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
-          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
-          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+      - name: 🔍 Verify & Guarantee APK Signature
         run: |
-          if [ -n "$KEYSTORE_BASE64" ] && [ -f "android/app/release.keystore" ]; then
-            echo "Signing APK with provided keystore..."
-            BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | tail -n 1)
-            $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore --ks-pass pass:"$KEYSTORE_PASSWORD" --ks-key-alias "$KEY_ALIAS" --key-pass pass:"$KEY_PASSWORD" android/app/build/outputs/apk/release/*.apk || true
-          else
-            echo "No keystore provided. Skipping APK signing."
+          BUILD_TOOLS=$(ls -d $ANDROID_HOME/build-tools/* | tail -n 1)
+          APK_FILE=$(find android/app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          
+          if [ -z "$APK_FILE" ]; then
+            echo "Error: No APK file found in release output directory!"
+            exit 1
           fi
+          
+          echo "Found release APK: $APK_FILE"
+          
+          # Check if signed; if unsigned, sign with apksigner
+          if ! $BUILD_TOOLS/apksigner verify --verbose "$APK_FILE" >/dev/null 2>&1; then
+            echo "Signing release APK with apksigner..."
+            $BUILD_TOOLS/apksigner sign --ks android/app/release.keystore \
+              --ks-pass pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD || 'android' }}" \
+              --ks-key-alias "${{ secrets.ANDROID_KEY_ALIAS || 'desiflix-key' }}" \
+              --key-pass pass:"${{ secrets.ANDROID_KEY_PASSWORD || 'android' }}" \
+              "$APK_FILE"
+          fi
+          
+          echo "Verifying APK signature scheme..."
+          $BUILD_TOOLS/apksigner verify --verbose "$APK_FILE"
 
-      - name: 🏷️ Rename APK Artifact
+      - name: 🏷️ Collect Release APK Artifact
         run: |
           mkdir -p output_apk
-          if [ -f "android/app/build/outputs/apk/release/app-release.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release.apk output_apk/DesiFlix-${{ github.ref_name || 'latest' }}.apk
-          elif [ -f "android/app/build/outputs/apk/release/app-release-unsigned.apk" ]; then
-            cp android/app/build/outputs/apk/release/app-release-unsigned.apk output_apk/DesiFlix-${{ github.ref_name || 'latest' }}-unsigned.apk
-          elif [ -f "android/app/build/outputs/apk/debug/app-debug.apk" ]; then
-            cp android/app/build/outputs/apk/debug/app-debug.apk output_apk/DesiFlix-${{ github.ref_name || 'latest' }}-debug.apk
+          RELEASE_APK=$(find android/app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
+          if [ -n "$RELEASE_APK" ]; then
+            TAG_NAME="${{ github.ref_name }}"
+            if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ] || [ "$TAG_NAME" = "master" ]; then
+              TAG_NAME="v1.0.0"
+            fi
+            cp "$RELEASE_APK" "output_apk/DesiFlix-${TAG_NAME}.apk"
+            echo "Copied $RELEASE_APK to output_apk/DesiFlix-${TAG_NAME}.apk"
           else
-            find android/app/build/outputs/apk/ -name "*.apk" -exec cp {} output_apk/ \;
+            echo "Error: Release APK not generated!"
+            exit 1
           fi
 
       - name: 📤 Upload Build Artifact (Every Push)
@@ -101,22 +165,22 @@ jobs:
           name: DesiFlix-APK-Build-${{ github.sha }}
           path: output_apk/*.apk
 
-      - name: 🚀 Create GitHub Release & Upload APK
+      - name: 🚀 Create GitHub Release & Upload Signed APK
         uses: softprops/action-gh-release@v2
         with:
-          name: DesiFlix Android App ${{ github.ref_name || 'Build' }}
+          name: DesiFlix Android App ${{ github.ref_name || 'Release' }}
           tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.0' }}
           target_commitish: ${{ github.sha }}
           draft: false
           prerelease: false
           body: |
-            ## 🎬 DesiFlix Android APK Release
+            ## 🎬 DesiFlix Android APK Release (Fully Signed)
             
-            This Android APK application was automatically compiled and published using **Node.js, Capacitor & GitHub Actions**.
+            This Android APK application was automatically compiled, **signed with valid release signatures (v1 & v2 schemes)**, and published using **Node.js, Capacitor & GitHub Actions**.
             
-            ### 📦 Download Instructions:
-            1. Download `DesiFlix-${{ github.ref_name || 'latest' }}.apk` attached below.
-            2. Transfer to your Android device and tap to install!
+            ### 📦 Download & Installation Instructions:
+            1. Download `DesiFlix-${{ github.ref_name || 'v1.0.0' }}.apk` attached below.
+            2. Open the APK on your Android device to install cleanly!
             
             ---
             *Automated CI/CD build powered by Node.js & GitHub Actions.*
@@ -124,4 +188,3 @@ jobs:
             output_apk/*.apk
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
