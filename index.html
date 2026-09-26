@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
   <title>DesiFlix - Node.js Android Application</title>
-  
+
   <!-- Google Fonts -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
-  
+  <link
+    href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700;800;900&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap"
+    rel="stylesheet">
+
   <link rel="stylesheet" href="/src/style.css" />
 </head>
+
 <body>
   <div id="app" class="mobile-frame">
     <!-- Top Status Bar & App Header -->
@@ -49,6 +53,122 @@
             <button class="btn btn-secondary" id="btn-simulate-apk">
               <span>📦 APK Status</span>
             </button>
+            <a href="#tv-streamer-section" class="btn btn-accent-tv" id="btn-hero-tv">
+              <span>📺 Live TV Player</span>
+            </a>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📺 Premium Smart TV Channel Streamer Section -->
+      <section class="section-container" id="tv-streamer-section">
+        <div class="section-header">
+          <h2>🎞️ Premium Smart TV Channel Streamer</h2>
+          <span class="section-tag glow-tag">v2.2 Live Engine</span>
+        </div>
+
+        <div class="glass-card tv-player-card">
+          <!-- Video Screen Viewport -->
+          <div class="video-container">
+            <video id="tv-video-player" playsinline controls preload="metadata">
+              Your browser does not support HTML5 video playback.
+            </video>
+            <div class="video-overlay-badge" id="tv-status-badge">
+              <span class="status-dot pulsing"></span>
+              <span id="tv-badge-text">Channel A1 Ready</span>
+            </div>
+            <div class="video-loader-overlay hidden" id="tv-loader-overlay">
+              <div class="spinner"></div>
+              <span id="tv-loader-text">Scanning for active stream...</span>
+            </div>
+          </div>
+
+          <!-- Channel Info Bar -->
+          <div class="tv-channel-bar">
+            <div class="channel-main-info">
+              <span class="tv-live-chip">LIVE</span>
+              <h3 id="tv-channel-title">Now Playing: Channel A1</h3>
+            </div>
+            <div class="tv-status-msg" id="tv-status-text">Status: Ready</div>
+          </div>
+
+          <!-- Player Main Controls -->
+          <div class="tv-controls-grid">
+            <button class="tv-btn" id="btn-tv-prev" title="Previous Channel">
+              <span class="btn-icon">⏮</span>
+              <span>Previous</span>
+            </button>
+            <button class="tv-btn tv-btn-main" id="btn-tv-play" title="Play/Pause">
+              <span class="btn-icon" id="tv-play-icon">⏯</span>
+              <span id="tv-play-label">Play</span>
+            </button>
+            <button class="tv-btn tv-btn-smart" id="btn-tv-next" title="Smart Next Channel">
+              <span class="btn-icon">⏭</span>
+              <span>Next (Smart)</span>
+            </button>
+            <button class="tv-btn" id="btn-tv-restart" title="Restart Stream">
+              <span class="btn-icon">🔄</span>
+              <span>Restart</span>
+            </button>
+          </div>
+
+          <!-- Android Native External Player Launcher -->
+          <div class="tv-android-launcher-row">
+            <button class="btn-android-native" id="btn-tv-android-native"
+              title="Launch stream in Android Native Player">
+              <span class="android-icon">🤖</span>
+              <span>Open Stream in Android Native Player (VLC / MX)</span>
+            </button>
+          </div>
+
+          <!-- Jump Channel Input -->
+          <div class="tv-jump-row">
+            <label for="tv-channel-input" class="jump-label">Jump Channel:</label>
+            <div class="jump-input-group">
+              <span class="jump-prefix">A</span>
+              <input type="number" id="tv-channel-input" value="1" min="1" max="999" />
+              <button class="btn-jump" id="btn-tv-jump">▶ Jump</button>
+            </div>
+          </div>
+
+          <!-- Options & Auto Scan Controls -->
+          <div class="tv-options-row">
+            <label class="toggle-switch">
+              <input type="checkbox" id="tv-auto-next-cb" checked />
+              <span class="slider"></span>
+              <span class="toggle-label">Auto Next + Smart Skip</span>
+            </label>
+
+            <button class="btn-scan" id="btn-tv-scan">
+              <span class="scan-icon">🔍</span>
+              <span>Scan & Save Streams</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 💾 Saved & Working Channels Manager Card -->
+        <div class="glass-card tv-saved-card">
+          <div class="saved-card-header">
+            <div class="saved-header-title">
+              <span class="saved-icon">⭐</span>
+              <div>
+                <h3>Auto-Saved Active Channels</h3>
+                <p>Discovered working TV streams saved automatically</p>
+              </div>
+            </div>
+            <div class="saved-header-actions">
+              <button class="btn-mini-action" id="btn-export-m3u" title="Export M3U Playlist">📥 M3U</button>
+              <button class="btn-mini-action btn-danger" id="btn-clear-saved" title="Clear Saved List">🗑️
+                Clear</button>
+            </div>
+          </div>
+
+          <!-- Channels Grid -->
+          <div class="saved-channels-list" id="saved-channels-list">
+            <div class="empty-channels-msg">
+              No saved channels yet. Click <strong>"Scan & Save Streams"</strong> or play channels to auto-save working
+              streams!
+            </div>
           </div>
         </div>
       </section>
@@ -131,11 +251,11 @@
         </div>
       </section>
 
-      <!-- DesiFlix Streaming Showcase Catalog -->
+      <!-- DesiFlix TV Channel Quick Launcher -->
       <section class="section-container">
         <div class="section-header">
-          <h2>🔥 DesiFlix Trending Shows</h2>
-          <span class="section-tag">Sample UI</span>
+          <h2>📺 TV Channel Quick Launcher</h2>
+          <span class="section-tag glow-tag">Live Streamer</span>
         </div>
 
         <div class="catalog-scroll" id="catalog-list">
@@ -153,7 +273,7 @@
               <p>Follow these 3 simple Node.js terminal commands in project folder:</p>
             </div>
           </div>
-          
+
           <div class="code-block">
             <div class="code-header">
               <span>POWERSHELL / CMD</span>
@@ -170,7 +290,8 @@ npx cap sync android
 npx cap open android</code></pre>
           </div>
           <div class="apk-footer-note">
-            💡 Or run <code>cd android && ./gradlew assembleDebug</code> to generate <code>app/build/outputs/apk/debug/app-debug.apk</code> without Android Studio GUI!
+            💡 Or run <code>cd android && ./gradlew assembleDebug</code> to generate
+            <code>app/build/outputs/apk/debug/app-debug.apk</code> without Android Studio GUI!
           </div>
         </div>
       </section>
@@ -199,4 +320,5 @@ npx cap open android</code></pre>
 
   <script type="module" src="/src/main.js"></script>
 </body>
+
 </html>

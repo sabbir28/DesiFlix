@@ -34,6 +34,14 @@ jobs:
         with:
           node-version: 20
 
+      - name: 🏷️ Determine Application Release Version
+        id: get_version
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          echo "APP_VERSION=v${VERSION}" >> $GITHUB_ENV
+          echo "version=v${VERSION}" >> $GITHUB_OUTPUT
+          echo "Determined release version: v${VERSION}"
+
       - name: ☕ Setup Java JDK 17
         uses: actions/setup-java@v4
         with:
@@ -148,10 +156,7 @@ jobs:
           mkdir -p output_apk
           RELEASE_APK=$(find android/app/build/outputs/apk/release/ -name "*.apk" | head -n 1)
           if [ -n "$RELEASE_APK" ]; then
-            TAG_NAME="${{ github.ref_name }}"
-            if [ -z "$TAG_NAME" ] || [ "$TAG_NAME" = "main" ] || [ "$TAG_NAME" = "master" ]; then
-              TAG_NAME="v1.0.0"
-            fi
+            TAG_NAME="${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || env.APP_VERSION }}"
             cp "$RELEASE_APK" "output_apk/DesiFlix-${TAG_NAME}.apk"
             echo "Copied $RELEASE_APK to output_apk/DesiFlix-${TAG_NAME}.apk"
           else
@@ -168,8 +173,8 @@ jobs:
       - name: 🚀 Create GitHub Release & Upload Signed APK
         uses: softprops/action-gh-release@v2
         with:
-          name: DesiFlix Android App ${{ github.ref_name || 'Release' }}
-          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || 'v1.0.0' }}
+          name: DesiFlix Android App ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || env.APP_VERSION }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || env.APP_VERSION }}
           target_commitish: ${{ github.sha }}
           draft: false
           prerelease: false
@@ -179,7 +184,7 @@ jobs:
             This Android APK application was automatically compiled, **signed with valid release signatures (v1 & v2 schemes)**, and published using **Node.js, Capacitor & GitHub Actions**.
             
             ### 📦 Download & Installation Instructions:
-            1. Download `DesiFlix-${{ github.ref_name || 'v1.0.0' }}.apk` attached below.
+            1. Download `DesiFlix-${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || env.APP_VERSION }}.apk` attached below.
             2. Open the APK on your Android device to install cleanly!
             
             ---
